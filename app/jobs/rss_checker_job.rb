@@ -19,13 +19,13 @@ class RssCheckerJob < ApplicationJob
       open(ENV['RSS_LINK']) do |rss|
         feed = RSS::Parser.parse(rss)
         feed.items.each do |item|
-          next if !last_published_date.nil? && item.pubDate < last_published_date
+          next if !last_published_date.nil? && item.pubDate <= last_published_date
           results[:response] << {
               description: item.description,
               title: item.title,
               url:   item.link
           }
-          last_rss_published_date = item.pubDate if last_rss_published_date.nil? || last_rss_published_date < item.pubDate
+          last_rss_published_date = item.pubDate if last_rss_published_date.nil? || last_rss_published_date <= item.pubDate
         end
       end
       File.open('last_pubDate', 'w') {|f| f.write(last_rss_published_date)} unless last_rss_published_date.nil?
