@@ -14,7 +14,7 @@ class RssCheckerJob < ApplicationJob
     begin
       results = {}
       results[:response] = []
-      last_published_date = File.read('last_pubDate')&.to_time
+      last_published_date = RssVersion.last_version&.last_pub_date
       last_rss_published_date = nil
       open(ENV['RSS_LINK']) do |rss|
         feed = RSS::Parser.parse(rss)
@@ -28,7 +28,7 @@ class RssCheckerJob < ApplicationJob
           last_rss_published_date = item.pubDate if last_rss_published_date.nil? || last_rss_published_date <= item.pubDate
         end
       end
-      File.open('last_pubDate', 'w') {|f| f.write(last_rss_published_date)} unless last_rss_published_date.nil?
+      RssVersion.update_version(last_rss_published_date) unless last_rss_published_date.nil?
       send_email_notification(ENV['EMAIL_TO_NOTIFY'], results) unless results[:response].empty?
       restart_job
     rescue => e
