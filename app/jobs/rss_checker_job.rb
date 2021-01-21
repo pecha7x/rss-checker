@@ -1,7 +1,9 @@
 class RssCheckerJob < ApplicationJob
   require 'rss'
   require 'open-uri'
-
+  require 'uri'
+  require 'net/http'
+  
   def max_attempts
     1
   end
@@ -28,6 +30,7 @@ class RssCheckerJob < ApplicationJob
           last_rss_published_date = item.pubDate if last_rss_published_date.nil? || last_rss_published_date <= item.pubDate
         end
       end
+      open(ENV['APP_URL'])
       RssVersion.update_version(last_rss_published_date) unless last_rss_published_date.nil?
       send_email_notification(ENV['EMAIL_TO_NOTIFY'], results) unless results[:response].empty?
       restart_job
@@ -50,4 +53,9 @@ class RssCheckerJob < ApplicationJob
   def restart_job
     RssCheckerJob.set(wait_until: 5.minutes.from_now).perform_later
   end
+
+  def open(url)
+    Net::HTTP.get(URI.parse(url))
+  end
+
 end
